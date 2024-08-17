@@ -20,20 +20,20 @@ def get_post_by_id(post_id: int):
 async def get_all_posts():
     return all_posts.values()
 
-@router.post("/", response_model=UserPost)
+@router.post("/", response_model=UserPost, status_code=201)
 async def add_new_post(post: UserPostIn):
-    data = post.dict()
+    data = post.model_dump()
     post_id = len(all_posts)
     new_post = {**data, "id": post_id}
     all_posts[post_id] = new_post
     return new_post
 
-@router.post("/{post_id}/comment", response_model=Comments)
+@router.post("/{post_id}/comment", response_model=Comments, status_code=201)
 async def add_new_comment(post_id: int, comment: CommentsIn):
     post = get_post_by_id(post_id)
     if not post:
         raise HTTPException(status_code=404, detail="Post not found")
-    data = comment.dict()
+    data = comment.model_dump()
     comment_id = len(all_comments)
     new_comment = {**data, "id": comment_id, "post_id": post_id}
     all_comments[comment_id] = new_comment
