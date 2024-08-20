@@ -17,7 +17,7 @@ async def test_simple_post(async_client: AsyncClient):
     body = "Test body"
     response = await async_client.post("/posts/", json={"body": body})
     assert response.status_code == 201
-    assert {"id": 0, "body": body}.items() <= response.json().items()
+    assert {"id": 1, "body": body}.items() <= response.json().items()
 
 @pytest.mark.anyio
 async def test_post_without_body(async_client: AsyncClient):

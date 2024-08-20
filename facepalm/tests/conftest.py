@@ -23,9 +23,9 @@ def client() -> Generator:
 # 3. Clear the db before executing each test. Hence set the `autouse` to True.
 @pytest.fixture(autouse=True)
 async def db():
-    database.connect()
+    await database.connect()
     yield
-    database.disconnect()
+    await database.disconnect()
 
 # 4. Generate async_client fixture which uses the client fixture to generate async client.
 @pytest.fixture()
