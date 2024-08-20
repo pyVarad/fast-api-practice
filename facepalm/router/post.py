@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException
 
+from facepalm.database import comments_table, database, post_table
 from facepalm.models.post import (
     Comments,
     CommentsIn,
@@ -10,45 +11,41 @@ from facepalm.models.post import (
 
 router = APIRouter()
 
-all_posts = {}
-all_comments = {}
-
-def get_post_by_id(post_id: int):
-    return all_posts.get(post_id)
+async def get_post_by_id(post_id: int):
+    query = post_table.select().where(post_table.c.id == post_id)
+    return await database.fetch_one(query)
 
 @router.get("/", response_model=list[UserPost])
 async def get_all_posts():
-    return all_posts.values()
+    query = post_table.select()
+    return await database.fetch_all(query)
 
 @router.post("/", response_model=UserPost, status_code=201)
 async def add_new_post(post: UserPostIn):
     data = post.model_dump()
-    post_id = len(all_posts)
-    new_post = {**data, "id": post_id}
-    all_posts[post_id] = new_post
-    return new_post
+    query = post_table.insert().values(data)
+    last_record_id = await database.execute(query)
+    return {**data, "id": last_record_id}
 
 @router.post("/{post_id}/comment", response_model=Comments, status_code=201)
 async def add_new_comment(post_id: int, comment: CommentsIn):
-    post = get_post_by_id(post_id)
+    post = await get_post_by_id(post_id)
     if not post:
         raise HTTPException(status_code=404, detail="Post not found")
     data = comment.model_dump()
-    comment_id = len(all_comments)
-    new_comment = {**data, "id": comment_id, "post_id": post_id}
-    all_comments[comment_id] = new_comment
-    return new_comment
+    query = comments_table.insert().values({**data, "post_id": post_id})
+    last_comment_id = await database.execute(query)
+    return {**data, "id": last_comment_id, "post_id": post_id}
 
 @router.get("/{post_id}/comment", response_model=list[Comments])
 async def get_all_comments_for_a_given_post_id(post_id: int):
-    post = get_post_by_id(post_id)
-    if not post:
-        raise HTTPException(status_code=404, detail="Post not found")
-    return [comment for comment in all_comments.values() if comment["post_id"] == post_id]
+    query = comments_table.select().where(comments_table.c.post_id == post_id)
+    return await database.fetch_all(query)
+
 
 @router.get("/{post_id}", response_model=PostsWithComments)
 async def get_post_id(post_id: int):
-    post = get_post_by_id(post_id)
+    post = await get_post_by_id(post_id)
     if not post:
         raise HTTPException(status_code=404, detail="Post not found")
     return {

@@ -1,11 +1,13 @@
+import os
 from typing import AsyncGenerator, Generator
 
 import pytest
 from fastapi.testclient import TestClient
 from httpx import ASGITransport, AsyncClient
 
-from facepalm.main import app
-from facepalm.router.post import all_comments, all_posts
+os.environ["ENV_STATE"] = "test"
+from facepalm.database import database
+from facepalm.main import app  #noqa: E402
 
 
 # 1. Add the anyio_backed as method for any pytest api.
@@ -21,9 +23,9 @@ def client() -> Generator:
 # 3. Clear the db before executing each test. Hence set the `autouse` to True.
 @pytest.fixture(autouse=True)
 async def db():
-    all_comments.clear()
-    all_posts.clear()
+    database.connect()
     yield
+    database.disconnect()
 
 # 4. Generate async_client fixture which uses the client fixture to generate async client.
 @pytest.fixture()
