@@ -6,3 +6,4 @@ databases[asyncpg]
 python-dotenv
 pydantic-settings
 rich
+asgi-correlation-id
